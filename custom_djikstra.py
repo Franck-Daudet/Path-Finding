@@ -44,7 +44,7 @@ def custom_dijkstra(G, start, finish):
                     smallest = distances[k]
                     last = k
 
-        unvisited_nodes.remove(current) #On retire le sommet actuel des visités
+        unvisited_nodes.remove(current) #On retire   le sommet actuel des visités
         current = last #On affecte le nouveau sommet qui a la plus petit distance avec le départ en tant que sommet actuel
 
     #On remonte le dictionnaire du sommet précédent afin de récupérer quelle sommets emprunter afin de prendre le trajet le plus cours
