@@ -1,7 +1,7 @@
 import folium as fo
 import osmnx as ox
 import geocoder
-import custom_djikstra 
+import custom_algo_pf as ca
 
 def name_To_Graphml(name):
     print("Map en cours de téléchargement")
@@ -22,8 +22,7 @@ def Graphml_to_Html(name, graph):
     orig1 = list(node)[0][0]
     dest1 = list(node)[-1][0]
 
-    routes = custom_djikstra.custom_dijkstra(graph, orig1, dest1)
-
+    routes = ca.opti_dijkstra(graph, orig1, dest1)
     x = ox.folium.plot_route_folium(graph,routes)
 
     fo.Marker([float(list(node)[0][1]['y']),float(list(node)[0][1]['x'])], popup='Départ',icon=fo.Icon(color="red", icon="glyphicon glyphicon-map-marker",popup="Départ"), draggable=True).add_to(x)
