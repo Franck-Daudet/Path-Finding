@@ -1,6 +1,6 @@
 import folium as fo
+from numpy import matrix
 import osmnx as ox
-import geocoder
 import custom_algo_pf as ca
 
 def name_To_Graphml(name):
@@ -9,23 +9,53 @@ def name_To_Graphml(name):
     ox.config(log_console=False)
 
     # Telecharge la carte et retourne un MultiDiGraph
-    G = ox.graph_from_address(name, network_type='all') # network_type = {"all_private", "all", "bike", "drive", "drive_service", "walk"}
+    graphml = ox.graph_from_address(name, network_type='all') # network_type = {"all_private", "all", "bike", "drive", "drive_service", "walk"}
 
-    # Sauvegarde la carte dans le dossier graphml
     print("Map Téléchargé")
-    return G
+    return graphml
 
-def Graphml_to_Html(name, graph):
-    print(type(name))
-    node = graph.nodes(data=True)
+def Graphml_to_Html(graph):
+    x = ox.plot_graph_folium(graph)
+    x.save("map.html")
 
-    orig1 = list(node)[0][0]
-    dest1 = list(node)[-1][0]
+def route_to_Html(graph,node_depart, node_arrive):
+    print(node_depart)
+    print(node_arrive)
 
-    routes = ca.opti_dijkstra(graph, orig1, dest1)
-    x = ox.folium.plot_route_folium(graph,routes)
+    x = ox.plot_graph_folium(graph)
+    x.save("map.html")
 
-    fo.Marker([float(list(node)[0][1]['y']),float(list(node)[0][1]['x'])], popup='Départ',icon=fo.Icon(color="red", icon="glyphicon glyphicon-map-marker",popup="Départ"), draggable=True).add_to(x)
-    fo.Marker([float(list(node)[-1][1]['y']),float(list(node)[-1][1]['x'])],icon=fo.Icon(color="green", icon="glyphicon glyphicon-record", popup="Arrivé"), draggable=True).add_to(x)
+def trouve_adresse_liste(graphml):
+    adresse_liste = [] # Liste des adresses du graph
+    adresse_temp = []
+    for elt in graphml.edges(data='name') : # data='name' retourne une tuple (NodeId, NodeId, adresse) si adresse non spécifié adresse = None
+        string = str(elt[2])
+        if(string != 'None' and string not in adresse_temp):
+            # string.startswith('[') permet de supprimer les adresse "ambigues" (ex: ['Traverse de la Savoisienne', 'Traverse des Pénitents Noirs'])
+            if (not(string.startswith('['))):
+                adresse_liste.append([string , elt[0]])
+                adresse_temp.append(string)
+    adresse_liste.sort()
+    return adresse_liste
+
+def adresse_en_html(graph, node_depart, node_arrive):
+    route = ca.custom_dijkstra(graph, node_depart, node_arrive)
+    x = ox.folium.plot_route_folium(graph,route)
+
+    # for i in range(len(route)-1):
+    #     print(graph[route[i]][route[i+1]])
+    position_depart = graph.node[node_depart]
+    position_arrive = graph.node[node_arrive]
+
+    fo.Marker(
+             (position_depart['y'],position_depart['x']),
+             icon=fo.Icon(color="red"),
+             popup="Départ").add_to(x)
+
+    fo.Marker(
+             (position_arrive['y'],position_arrive['x']),
+             icon=fo.Icon(color="green"),
+             popup="Arrivé").add_to(x)
+
 
     x.save("map.html")
