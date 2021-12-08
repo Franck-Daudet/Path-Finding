@@ -1,172 +1,242 @@
 import networkx as nx
-import matplotlib.pyplot as plt
 import osmnx as ox
+
+"""Fonctions communes à plusieurs algorithmes
+
+    calc_distance : Détermine la distance entre deux sommets mis en paramètre.
+    fin_algo : Récupère le dictionnaire contenant le sommet précédent de chaque
+               sommet et créer une liste qui contient les sommets a emprunté
+               pour avoir le plus cours chemin, puis la renvoie. Si
+               la condition est vraie, elle retourne une liste vide.
+"""
 
 def calc_distance(a, b):
     return ((a['x'] - b['x']) ** 2 + (a['y'] - b['y']) ** 2) ** 0.5
 
-def dijkstra_loop(G, unvisited_nodes, distances, previous_nodes, start):
+
+def fin_algo(sommet_precedent, cond, debut, fin):
+
+    meilleur_chemin = []
+    if cond:
+        print("Il n'existe pas de chemin pour atteindre ", fin, " depuis le point ", debut)
+        return []
     
-    current = start # Création de la variable "current" qui correspond au sommet actuellement "analysé" par l'algo
-    distances[current] = 0  # Le point de départ est par définition à une distance de 0 de lui même
+    while fin != None:
+        meilleur_chemin.insert(0, fin)
+        fin = sommet_precedent[fin]
+    # Tant que le sommet precedent de fin n'est pas null
+    # On rajoute le sommet au début de la liste et fin devient son sommet précédent
 
-    while unvisited_nodes: #Exécute cette boucle tant qu'il y a des sommmets non visité
-        neighbors_current = nx.neighbors(G, current) #On récupère tous les voisins du sommet actuel
+    return meilleur_chemin
 
-        #On va affecter une distance entre le sommet actuel et les voisins si cette distance est plus petite que celle existante
-        for j in neighbors_current:
-            if j in unvisited_nodes:
-                val = G.edges[(current, j, 0)]["length"] + distances[current]
+"""boucle_dijkstra
 
-                if distances[j] > val:
-                    distances[j] = val
-                    previous_nodes[j] = current
+    Il s'agit de la partie principale des deux algorithmes qui l'utilisent,
+    tant qu'il y a des sommets dans la liste sommets_non_visites, la fonction
+    va réaliser l'arbre couvrant du graphe, c'est à dire, que chaque sommet
+    soit relié au graphe en utilisant l'arête qui le rapproche le plus
+    possible du point de départ (la racine).
 
+    
+    @parametre graphe       G 
+    @parametre liste        sommets_non_visites
+    @parametre dictionnaire distances 
+    @parametre dictionnaire sommet_precedent
+    @renvoie   liste        meilleur_chemin 
+"""
+
+def boucle_dijkstra(G, sommets_non_visites, distances, sommet_precedent, debut):  
+
+    sommet_actuel = debut
+    while sommets_non_visites: 
+        voisins_sommet_actuel = nx.neighbors(G, sommet_actuel) 
         
-        smallest = float('inf')
+        for j in voisins_sommet_actuel:
+            if j in sommets_non_visites:
+                nouvelle_dist = G.edges[(sommet_actuel, j, 0)]["length"] + distances[sommet_actuel]
+                #On calcul la nouvelle distance par rapport a la racine
+                if nouvelle_dist < distances[j]:
+                    distances[j] = nouvelle_dist
+                    sommet_precedent[j] = sommet_actuel
+                #Si la distance est plus courte, on met a jour l'arête qui
+                #permet d'accéder a ce sommet
+
+        plus_petit = float('inf')
         
-        #On va sélectionner le sommet ayant une distance la plus petite avec le sommet de départ
         for k in distances:
-            if k in unvisited_nodes and k != current:
-                if smallest > distances[k]:
-                    smallest = distances[k]
-                    last = k
+            if k in sommets_non_visites and k != sommet_actuel:
+                if plus_petit > distances[k]:
+                    plus_petit = distances[k]
+                    dernier = k
+        #On détermine le prochain sommet à prendre en choississant celui
+        #qui a la plus petite distance avec le sommet de départ
+
+        sommets_non_visites.remove(sommet_actuel)
+        sommet_actuel = dernier
+        #Mise à jour du sommet actuel
         
-        unvisited_nodes.remove(current) #On retire   le sommet actuel des visités
-        current = last #On affecte le nouveau sommet qui a la plus petit distance avec le départ en tant que sommet actuel
-        if smallest == float('inf'): #Si le programme n'a pas trouvé de noeud ayant une distance non égale à l'infini, alors ces noeuds sont isolé du points de départ
-            unvisited_nodes.clear()
-    return previous_nodes
+        if plus_petit == float('inf'): 
+            sommets_non_visites.clear()
+        #Si les sommets restants ne peuvent pas être lié a l'arbre couvrant
+        #on vide la liste pour arrêter la boucle
+    return sommet_precedent
 
-def custom_dijkstra(G, start, finish):
+"""custom_dijkstra
 
-    print("Lancement de dijkstra custom :")
+    L'algorithme de base, il initialise les listes et les dictionnaires,
+    ensuite il fait appel aux fonctions boucle_dijkstra et fin_algo
+    pour faire le traitement.
+
     
-    distances = {} #On initialise le dictionnaire notant la distance du point d'origine pour chaque sommets
-    previous_nodes = {} #On initialise le dictionnaire notant le sommet précédant du sommet en question
-    smallest_path = [] #Une liste des sommets à emprunter pour effectuer le chemin le plus court
+    @parametre graphe   G 
+    @parametre sommet   debut
+    @parametre sommet   fin 
+    @renvoie   liste    meilleur_chemin 
+"""
 
-    unvisited_nodes = list(nx.nodes(G)) #On récupère tout les sommets (qui plus tard représentera tous les sommets non visité par l'algo)
+def custom_dijkstra(G, debut, fin):
+ 
+    distances = {} 
+    sommet_precedent = {} 
+    sommets_non_visites = list(nx.nodes(G))
+    #On récupère tous les sommets du graphe
 
-    for i in unvisited_nodes:
-        distances[i] = float('inf') #On initialise la distance du départ au sommet en question à infini
+    for i in sommets_non_visites:
+        distances[i] = float('inf')
+    #Par défaut, toutes les distances a la racine sont infini
 
-    previous_nodes[start] = None #Il n'a pas de sommet précédent
-    previous_nodes[finish] = None #Tant qu'un chemin n'a pas été trouvé la valeur est null
+    sommet_precedent[debut] = None 
+    sommet_precedent[fin] = None
+    distances[debut] = 0
 
-    previous_nodes = dijkstra_loop(G, unvisited_nodes, distances, previous_nodes, start) 
+    sommet_precedent = boucle_dijkstra(G, sommets_non_visites, distances, 
+                                       sommet_precedent, debut) 
 
-    #On remonte le dictionnaire du sommet précédent afin de récupérer quelle sommets emprunter afin de prendre le trajet le plus cours
-    if previous_nodes[finish] == None:
-        print("Il n'existe pas de chemin pour atteindre ", finish, " depuis le point ", start)
-        print("Fin de dijkstra custom")
-        return []
+    return fin_algo(sommet_precedent, 
+                    sommet_precedent[fin] == None, debut, fin)
+
+"""opti_dijkstra
+
+    Version optimisée de la version de base, il fait les mêmes initialisations
+    que celui d'origine, à la différence, qu'il va créer un cercle centré
+    sur le milieu entre le sommet de départ et celui d'arrivée, tous les 
+    sommets en dehors du rayon de ce cercle seront retirés des sommets
+    a visité. Ensuite il fait appel aux fonctions boucle_dijkstra et 
+    fin_algo pour faire le traitement.
+
     
-    while finish != None:
-        smallest_path.insert(0, finish)
-        finish = previous_nodes[finish]
+    @parametre graphe   G 
+    @parametre sommet   debut
+    @parametre sommet   fin 
+    @renvoie   liste    meilleur_chemin 
+"""
 
-    print("Fin de dijkstra custom")
-    return smallest_path
+def opti_dijkstra(G, debut, fin):
 
+    distances = {} 
+    sommet_precedent = {} 
 
-def opti_dijkstra(G, start, finish):
+    sommets_non_visites = list(nx.nodes(G))
+    #On récupère tous les sommets du graphe 
+    milieu_x = (G.nodes[debut]['x'] + G.nodes[fin]['x'])/2
+    milieu_y = (G.nodes[debut]['y'] + G.nodes[fin]['y'])/2
+    #On détermine les coordonnées du milieu des deux sommets
+    rayon = calc_distance(
+        {'x': milieu_x,'y': milieu_y}, 
+        G.nodes[debut]) * 1.25 # On prend une marge de 25% sur le rayon
 
-    print("Lancement de dijkstra opti :")
+    for j in sommets_non_visites:
+        if calc_distance({'x': milieu_x,'y': milieu_y}, G.nodes[j]) > rayon:
+            sommets_non_visites.remove(j)
+    #On retire tous les sommets n'étant pas dans le rayon du cercle
     
-    distances = {} #On initialise le dictionnaire notant la distance du point d'origine pour chaque sommets
-    previous_nodes = {} #On initialise le dictionnaire notant le sommet précédant du sommet en question
-    smallest_path = [] #Une liste des sommets à emprunter pour effectuer le chemin le plus court
+    for i in sommets_non_visites:
+        distances[i] = float('inf')
+    #Par défaut, toutes les distances a la racine sont infini
 
-    unvisited_nodes = list(nx.nodes(G)) #On récupère tout les sommets (qui plus tard représentera tous les sommets non visité par l'algo)
-    point_x = (G.nodes[start]['x'] + G.nodes[finish]['x'])/2
-    point_y = (G.nodes[start]['y'] + G.nodes[finish]['y'])/2
-    radius = calc_distance(G.nodes[start], {'x': point_x,'y': point_y}) * 1.25
-
-    for j in unvisited_nodes:
-        if calc_distance({'x': point_x,'y': point_y}, G.nodes[j]) > radius:
-            unvisited_nodes.remove(j)
-    
-    for i in unvisited_nodes:
-        distances[i] = float('inf') #On initialise la distance du départ au sommet en question à infini
-
-    current = start # Création de la variable "current" qui correspond au sommet actuellement "analysé" par l'algo   
-    distances[current] = 0  # Le point de départ est par définition à une distance de 0 de lui même
-    previous_nodes[start] = None #Il n'a pas de sommet précédent
-    previous_nodes[finish] = None #Tant qu'un chemin n'a pas été trouvé la valeur est null
+    sommet_precedent[debut] = None 
+    sommet_precedent[fin] = None 
+    distances[debut] = 0
 
 
-    previous_nodes = dijkstra_loop(G, unvisited_nodes, distances, previous_nodes, start)
+    sommet_precedent = boucle_dijkstra(G, sommets_non_visites, distances, 
+                                       sommet_precedent, debut)
         
-    #On remonte le dictionnaire du sommet précédent afin de récupérer quelle sommets emprunter afin de prendre le trajet le plus cours
-    if previous_nodes[finish] == None:
-        print("Il n'existe pas de chemin pour atteindre ", finish, " depuis le point ", start)
-        print("Fin de dijkstra opti")
-        return []
+    return fin_algo(sommet_precedent, 
+                    sommet_precedent[fin] == None, debut, fin)
+
+"""custom_Astar
+
+    Version customisée de l'algorithme A*, l'algorithme parcourt
+    les sommets du graphe de manière a essayé de se rapprocher
+    le plus possible à chaque itération, du sommet d'arrivée
+    tout en prenant en compte le coût de l'arête.
+    Lorsqu'il l'a atteint, ou qu'il détermine qu'il ne peut 
+    pas l'atteindre, il appelle la fonction fin_algo.
+
     
-    while finish != None:
-        smallest_path.insert(0, finish)
-        finish = previous_nodes[finish]
+    @parametre graphe   G 
+    @parametre sommet   debut
+    @parametre sommet   fin 
+    @renvoie   liste    meilleur_chemin 
+"""
 
-    print("Fin de dijkstra opti")
-    return smallest_path
+def custom_Astar(G, debut, fin):
 
-
-
-
-def custom_Astar(G, start, finish):
-
-    current = start
-
-    previous_nodes = {}
+    sommet_actuel = debut
+    sommet_precedent = {}
     distances = {}
-    smallest_path = []
-    open_list = []
-    marked = []
+    liste_ouverte = []
+    sommets_marques = []
 
-    
-    current = start
-    open_list.append(current)
-    previous_nodes[current] = None
-    distances[current] = calc_distance(G.nodes[start], G.nodes[finish])
-    boolean = True
+    liste_ouverte.append(sommet_actuel)
+    sommet_precedent[sommet_actuel] = None
+    distances[sommet_actuel] = calc_distance(G.nodes[sommet_actuel], 
+                                             G.nodes[fin])
+    #Initialisation
+    booleen = True
 
-    while boolean:
-        neighbors_current = list(nx.neighbors(G, current))
-        for i in neighbors_current:
-            if i == finish:
-                previous_nodes[finish] = current
-                boolean = False
+    while booleen:
+        voisins_sommet_actuel = list(nx.neighbors(G, sommet_actuel))
+        for i in voisins_sommet_actuel:
+            if i == fin:
+                sommet_precedent[fin] = sommet_actuel
+                booleen = False
                 continue
-            elif i not in marked:
-                distance_neighbor_finish = calc_distance(G.nodes[i], G.nodes[finish])
-                if i not in open_list:
-                    open_list.append(i)
-                    distances[i] = distance_neighbor_finish
-                    previous_nodes[i] = current
+            #Si l'un des voisins et le sommet d'arrivée,
+            #on le note et on quitte la boucle
+            elif i not in sommets_marques and i not in liste_ouverte:
+                distance_voisin_fin = calc_distance(G.nodes[i], G.nodes[fin])
+                liste_ouverte.append(i)
+                distances[i] = distance_voisin_fin
+                sommet_precedent[i] = sommet_actuel
+            #Si il n'est pas déjà dans la liste des possibilité,
+            #on le rajoute ainsi que sa distance au sommet d'arrivée
 
-        marked.append(current)
-        open_list.remove(current)
+        sommets_marques.append(sommet_actuel)
+        liste_ouverte.remove(sommet_actuel)
 
-        smallest = float('inf')
-        for k in open_list:
-            closer = distances[previous_nodes[k]] - distances[k]
-            ratio = G.edges[(previous_nodes[k], k, 0)]["length"]/closer
-            if closer > 0 and (ratio < smallest or smallest <= 0):
-                smallest = ratio
-                last = k
-            elif closer <= 0 and (smallest == float('inf') or ratio > smallest):
-                smallest = ratio
-                last = k
+        plus_petit = float('inf')
+        for k in liste_ouverte:
+            proximitee = distances[sommet_precedent[k]] - distances[k]
+            #Calcul du rapprochement gagné vers l'arrivée entre les sommets
+            ratio = G.edges[(sommet_precedent[k], k, 0)]["length"]/proximitee
+            #On détermine le ratio entre a quelle point cela nous rapproche
+            #de l'arrivée et le coût du chemin.
+            if proximitee > 0 and (ratio < plus_petit or plus_petit <= 0):
+                plus_petit = ratio
+                dernier = k
+            #Si le ratio est plus petit que le précédent on est le màj
+            elif proximitee <= 0 and (plus_petit == float('inf') 
+                                 or ratio > plus_petit):
+                plus_petit = ratio
+                dernier = k
+            #Dans le cas où la proximitée est négative, 
+            #le processus est inversée, ainsi, 
+            # si le ratio est plus grand que le précédent on est le màj
+        
+        sommet_actuel = dernier
+        #Mise à jour du sommet actuel
     
-        if smallest == float('inf'):
-            print("Il n'existe pas de chemin pour atteindre ", finish, " depuis le point ", start)
-            return []
-
-        current = last
-
-    while finish != None:
-        smallest_path.insert(0, finish)
-        finish = previous_nodes[finish]
-
-    return smallest_path
+    return fin_algo(sommet_precedent, 
+                    plus_petit == float('inf'), debut, fin)
