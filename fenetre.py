@@ -79,7 +79,6 @@ class MainWindow(QMainWindow):
     def creation_traject_visualiser(self):
         #Création des widgets
         self.carte_visualiser2 = QWebEngineView()
-        self.carte_visualiser2.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls,True)
         self.carte_visualiser2.load(QUrl.fromLocalFile(self.path))
         self.carte_visualiser2.show()
 
