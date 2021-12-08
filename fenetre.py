@@ -40,14 +40,20 @@ class MainWindow(QMainWindow):
     def creation_telechargement(self):
         #Création des widgets
         self.addresse_ville = QLineEdit()
+        self.Q_combobox_type_graph = QComboBox()
         self.addresse_ville.setPlaceholderText("Quelle carte faut-il télecharger")
         self.Q_boutton_telechargement = QPushButton("Télécharger la carte")
         #Ajout de la fonction au click sur le bouton 
         self.Q_boutton_telechargement.clicked.connect(self.fonction_1)
-        
+
+        liste_type_graph = [['Tout','all'],['en voiture','drive'],['a pied','walk']]
+        for i in range(len(liste_type_graph)):
+            self.Q_combobox_type_graph.addItem(liste_type_graph[i][0],liste_type_graph[i][1])
+
         #Agencement de la fentre
         layout1 = QVBoxLayout()
         layout1.addWidget(self.addresse_ville)
+        layout1.addWidget(self.Q_combobox_type_graph)
         layout1.addWidget(self.Q_boutton_telechargement)
         self.stack1.setLayout(layout1)
     
@@ -55,8 +61,13 @@ class MainWindow(QMainWindow):
         #Création des widgets
         self.Q_combobox_depart = QComboBox()
         self.Q_combobox_arrive = QComboBox()
+        self.Q_combobox_choix_algo = QComboBox()
         self.Q_boutton_telechargement = QPushButton("Telecharger la carte")
         self.Q_boutton_telechargement.clicked.connect(self.fonction_2)
+
+        liste_algorithme = [['Djikstra custom','custom_dijkstra'],['Djikstra optimisé','opti_dijkstra'],['A* custom','custom_Astar']]
+        for i in range(len(liste_algorithme)):
+            self.Q_combobox_choix_algo.addItem(liste_algorithme[i][0],liste_algorithme[i][1])
         
         #Création de la fentre de visualisation web
         self.carte_visualiser = QWebEngineView()
@@ -72,6 +83,7 @@ class MainWindow(QMainWindow):
         layout2 = QVBoxLayout()
         layout2.addWidget(self.Q_combobox_depart)
         layout2.addWidget(self.Q_combobox_arrive)
+        layout2.addWidget(self.Q_combobox_choix_algo)
         layout2.addWidget(self.Q_boutton_telechargement)
         layout2.addWidget(self.carte_visualiser)
         self.stack2.setLayout(layout2)
@@ -81,6 +93,8 @@ class MainWindow(QMainWindow):
         self.carte_visualiser2 = QWebEngineView()
         self.carte_visualiser2.load(QUrl.fromLocalFile(self.path))
         self.carte_visualiser2.show()
+        self.carte_visualiser2.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls,True)
+
 
         #Agencement de la fentre
         layout3 = QVBoxLayout()
@@ -97,8 +111,9 @@ class MainWindow(QMainWindow):
               pour chercher les adresse
             - Passer à la seconde fenetre
         '''
+        self.type_graph = self.Q_combobox_type_graph.currentData()
         self.adresse = self.addresse_ville.text()
-        self.graph = map_Function.addresse_en_graph(self.adresse)
+        self.graph = map_Function.addresse_en_graph(self.adresse, self.type_graph)
         map_Function.graph_to_html(self.graph)
         self.carte_visualiser.reload()
 
@@ -107,7 +122,8 @@ class MainWindow(QMainWindow):
         for i in range(len(self.adresse_liste)):
             self.Q_combobox_arrive.addItem(self.adresse_liste[i][0],self.adresse_liste[i][1])
             self.Q_combobox_depart.addItem(self.adresse_liste[i][0],self.adresse_liste[i][1])
-
+        
+        self.setFixedSize(QSize(700, 700))
         self.stack_widget.setCurrentIndex(1)
 
     def fonction_2(self):
@@ -123,10 +139,12 @@ class MainWindow(QMainWindow):
         self.id_arrive = self.Q_combobox_arrive.currentData()
         self.txt_arrive = self.Q_combobox_arrive.currentText()
 
-        map_Function.trajet_en_html(self.graph, self.id_depart, self.id_arrive)
+        self.algo_choisit = self.Q_combobox_choix_algo.currentData()
+
+
+        map_Function.trajet_en_html(self.graph, self.id_depart, self.id_arrive, self.algo_choisit)
 
         self.carte_visualiser2.reload()
-        self.setFixedSize(QSize(700, 700))
         self.stack_widget.setCurrentIndex(2)
         
 
