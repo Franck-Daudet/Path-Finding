@@ -1,31 +1,29 @@
 import folium as fo
-from numpy import matrix
 import osmnx as ox
 import custom_algo_pf as ca
 
-def name_To_Graphml(name):
+def addresse_en_graph(adresse):
+    '''Prend en paramètre une adresse et retourne un graph'''
     print("Map en cours de téléchargement")
     # Affichage des logs de la console
     ox.config(log_console=False)
 
     # Telecharge la carte et retourne un MultiDiGraph
-    graphml = ox.graph_from_address(name, network_type='all') # network_type = {"all_private", "all", "bike", "drive", "drive_service", "walk"}
+    graphml = ox.graph_from_address(adresse, network_type='all') # network_type = {"all_private", "all", "bike", "drive", "drive_service", "walk"}
 
     print("Map Téléchargé")
     return graphml
 
-def Graphml_to_Html(graph):
+def graph_to_html(graph):
+    '''Récupère un graph en paramètre et le convertit en map.html'''
     x = ox.plot_graph_folium(graph)
     x.save("map.html")
 
-def route_to_Html(graph,node_depart, node_arrive):
-    print(node_depart)
-    print(node_arrive)
-
-    x = ox.plot_graph_folium(graph)
-    x.save("map.html")
 
 def trouve_adresse_liste(graphml):
+    '''Recherche la liste des adresses existantes dans le graph
+    Le graph contient une liste d'adresse de la forme [adresse, id_node]
+    '''
     adresse_liste = [] # Liste des adresses du graph
     adresse_temp = []
     for elt in graphml.edges(data='name') : # data='name' retourne une tuple (NodeId, NodeId, adresse) si adresse non spécifié adresse = None
@@ -38,12 +36,13 @@ def trouve_adresse_liste(graphml):
     adresse_liste.sort()
     return adresse_liste
 
-def adresse_en_html(graph, node_depart, node_arrive):
+def trajet_en_html(graph, node_depart, node_arrive):
+    '''Récupère un graph en paramètre ainsi que le node d'arrivé et de départ,
+    utilise un algorithme de recherche et retourne un map.html
+    '''
     route = ca.custom_dijkstra(graph, node_depart, node_arrive)
     x = ox.folium.plot_route_folium(graph,route)
 
-    # for i in range(len(route)-1):
-    #     print(graph[route[i]][route[i+1]])
     position_depart = graph.node[node_depart]
     position_arrive = graph.node[node_arrive]
 
