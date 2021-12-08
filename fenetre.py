@@ -1,6 +1,7 @@
 import sys
 import os
 from PySide6.QtCore import QUrl
+from PySide6.QtWebEngineCore import QWebEngineSettings
 
 from PySide6.QtWidgets import (QApplication, QComboBox, QLineEdit,
                                QMainWindow, QPushButton, QStackedWidget,
@@ -62,6 +63,7 @@ class MainWindow(QMainWindow):
     
     def creation_traject_visualiser(self):
         self.carte_visualiser2 = QWebEngineView()
+        self.carte_visualiser2.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls,True)
         self.carte_visualiser2.load(QUrl.fromLocalFile(self.path))
         self.carte_visualiser2.show()
 
