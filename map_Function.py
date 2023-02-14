@@ -43,8 +43,8 @@ def trajet_en_html(graph, node_depart, node_arrive,algorithme):
     route = getattr(ca, algorithme)(graph, node_depart, node_arrive)
     x = ox.folium.plot_route_folium(graph,route)
 
-    position_depart = graph.node[node_depart]
-    position_arrive = graph.node[node_arrive]
+    position_depart = graph.nodes[node_depart]
+    position_arrive = graph.nodes[node_arrive]
 
     fo.Marker(
              (position_depart['y'],position_depart['x']),
